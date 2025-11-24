@@ -1,0 +1,132 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Source+Sans+Pro:wght@400;600;700&family=Inter:wght@400;500;600&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Source Sans Pro', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #fbf8f8;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Poppins', sans-serif;
+}
+
+.hero-section {
+  background-color: #f5e6ed;
+  position: relative;
+  overflow: hidden;
+}
+
+.nav-link {
+  font-weight: 600;
+  font-size: 1.125rem;
+  color: #3d3e3f;
+  transition: color 0.2s ease;
+}
+
+.nav-link:hover {
+  color: #266EF6;
+}
+
+.btn-primary {
+  background-color: #3758f9;
+  color: white;
+  padding: 0.75rem 1.75rem;
+  border-radius: 25px;
+  font-weight: 700;
+  transition: background-color 0.2s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background-color: #2a47e8;
+}
+
+.btn-secondary {
+  background-color: white;
+  color: #000347;
+  padding: 9px 18px;
+  border-radius: 40px;
+  font-weight: 700;
+  font-size: 0.875rem;
+  transition: background-color 0.2s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background-color: #f9fafb;
+}
+
+.search-tag {
+  background-color: #3d3e3f;
+  color: white;
+  padding: 2px 15px;
+  border-radius: 20px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.search-tag:hover {
+  background-color: #2a2b2c;
+}
+
+.topic-card {
+  background-color: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(8px);
+  border-radius: 1rem;
+  position: relative;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.topic-card:hover {
+  background-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.footer-link {
+  font-size: 1rem;
+  color: #3d3e3f;
+  transition: color 0.2s ease;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.footer-link:hover {
+  color: #266EF6;
+}
+
+.content-stretch {
+  align-content: stretch;
+}
+
+.size-full {
+  width: 100%;
+  height: 100%;
+}
+
+.object-50%-50% {
+  object-position: 50% 50%;
+}
+
+.text-shadow {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.backdrop-blur-light {
+  backdrop-filter: blur(8px);
+}
+
