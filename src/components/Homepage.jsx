@@ -1,4 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { documentationAPI } from '../utils/documentationAPI';
+import { formatBranchName } from '../utils/formatBranchName';
 import logoImg from '../assets/images/Logo.png';
 import vectorSvg from '../assets/svg/Vector.svg';
 import vector1Svg from '../assets/svg/Vector-1.svg';
@@ -14,6 +17,42 @@ import icon4 from '../assets/svg/icon4.svg';
 import MobileMenu from './MobileMenu';
 
 const Homepage = () => {
+  const navigate = useNavigate();
+  const [repositories, setRepositories] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Icon colors for cards
+  const cardColors = ['bg-[#00d5be]', 'bg-[#ff8904]', 'bg-[#51a2ff]', 'bg-[#c27aff]'];
+  const icons = [icon1, icon2, icon3, icon4];
+
+  // Fetch repositories on mount
+  useEffect(() => {
+    const fetchRepositories = async () => {
+      try {
+        setLoading(true);
+        const response = await documentationAPI.getAllRepositories();
+        console.log('Repositories fetched:', response.data);
+        setRepositories(response.data || []);
+      } catch (error) {
+        console.error('Error fetching repositories:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRepositories();
+  }, []);
+
+  // Handle card click - navigate to documentation with branch name
+  const handleCardClick = (branchName) => {
+    console.log('Navigating to branch:', branchName);
+    if (branchName) {
+      navigate(`/documentation/${encodeURIComponent(branchName)}`);
+    } else {
+      navigate('/documentation');
+    }
+  };
+
   return (
     <div className="w-full min-h-screen bg-[#fbf8f8]">
       <div className="bg-[#fbf8f8] relative min-h-screen w-full max-w-[1440px] mx-auto">
@@ -48,14 +87,6 @@ const Homepage = () => {
               <a href="#" className="font-semibold text-lg text-[#3d3e3f] hover:text-[#266EF6] transition-colors duration-200">Pricing</a>
               <a href="#" className="font-semibold text-lg text-[#3d3e3f] hover:text-[#266EF6] transition-colors duration-200">About</a>
             </nav>
-
-            {/* Desktop Sign In Button & Mobile Menu */}
-            {/* <div className="flex items-center gap-4">
-              <button className="bg-white text-[#000347] px-[18px] py-[9px] rounded-[40px] font-bold text-sm hover:bg-gray-50 transition-colors duration-200">
-                Sign In
-              </button>
-              <MobileMenu />
-            </div> */}
           </header>
 
           {/* Main Content */}
@@ -114,33 +145,34 @@ const Homepage = () => {
               </p>
             </div>
 
-            {/* Topic Cards */}
+            {/* Topic Cards - Dynamic from API */}
             <div className="relative">
               <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] opacity-100 z-0">
                 <img src={subtractSvg} alt="" className="w-full h-full object-contain" />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12 relative z-10">
-                <TopicCard 
-                  icon={icon1} 
-                  title="Module 1" 
-                  bgColor="bg-[#00d5be]"
-                />
-                <TopicCard 
-                  icon={icon2} 
-                  title="Module 2" 
-                  bgColor="bg-[#ff8904]"
-                />
-                <TopicCard 
-                  icon={icon3} 
-                  title="Module 3" 
-                  bgColor="bg-[#51a2ff]"
-                />
-                <TopicCard 
-                  icon={icon4} 
-                  title="Module 4" 
-                  bgColor="bg-[#c27aff]"
-                />
-              </div>
+              
+              {loading ? (
+                <div className="text-center py-12">
+                  <p className="text-lg text-gray-500">Loading modules...</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12 relative z-10">
+                  {repositories.map((repo, index) => {
+                    const branchName = repo.attributes?.branch;
+                    const displayName = formatBranchName(branchName);
+                    
+                    return (
+                      <TopicCard 
+                        key={repo.id}
+                        icon={icons[index % icons.length]} 
+                        title={displayName || `Module ${index + 1}`} 
+                        bgColor={cardColors[index % cardColors.length]}
+                        onClick={() => handleCardClick(branchName)}
+                      />
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Question Link */}
@@ -231,9 +263,12 @@ const Homepage = () => {
 };
 
 // Topic Card Component
-const TopicCard = ({ icon, title, bgColor }) => {
+const TopicCard = ({ icon, title, bgColor, onClick }) => {
   return (
-    <div className="bg-white bg-opacity-40 backdrop-blur-sm rounded-2xl relative hover:bg-opacity-60 transition-all duration-300 hover:shadow-lg w-full max-w-sm h-80 lg:h-[336px] p-6 cursor-pointer group">
+    <div 
+      className="bg-white bg-opacity-40 backdrop-blur-sm rounded-2xl relative hover:bg-opacity-60 transition-all duration-300 hover:shadow-lg w-full max-w-sm h-80 lg:h-[336px] p-6 cursor-pointer group"
+      onClick={onClick}
+    >
       <div className={`w-12 h-12 ${bgColor} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
         <img src={icon} alt="" className="w-6 h-6" />
       </div>

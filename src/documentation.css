@@ -1,0 +1,167 @@
+/* Documentation content styling */
+.documentation-content {
+  @apply text-base leading-relaxed;
+}
+
+/* Hide navigation elements that might slip through */
+.documentation-content nav,
+.documentation-content [role="toc"],
+.documentation-content .nav {
+  @apply hidden;
+}
+
+/* DITA specific styling */
+.documentation-content .nested0,
+.documentation-content .nested1,
+.documentation-content .nested2 {
+  @apply mb-6;
+}
+
+.documentation-content .topictitle1 {
+  @apply text-2xl font-bold text-gray-900 mb-6 mt-8;
+}
+
+.documentation-content .topictitle2 {
+  @apply text-xl font-semibold text-gray-800 mb-4 mt-6;
+}
+
+.documentation-content .topictitle3 {
+  @apply text-lg font-medium text-gray-700 mb-3 mt-4;
+}
+
+.documentation-content .conbody,
+.documentation-content .refbody {
+  @apply mb-4;
+}
+
+.documentation-content .ol,
+.documentation-content .ul {
+  @apply mb-4 ml-6;
+}
+
+.documentation-content .li {
+  @apply mb-2;
+}
+
+.documentation-content .dl {
+  @apply mb-4;
+}
+
+.documentation-content .dt {
+  @apply font-semibold text-gray-800 mt-3;
+}
+
+.documentation-content .dd {
+  @apply ml-4 mb-2 text-gray-600;
+}
+
+.documentation-content h1 {
+  @apply text-2xl font-bold text-gray-900 mb-6 mt-8;
+}
+
+.documentation-content h2 {
+  @apply text-xl font-semibold text-gray-800 mb-4 mt-6;
+}
+
+.documentation-content h3 {
+  @apply text-lg font-medium text-gray-700 mb-3 mt-4;
+}
+
+.documentation-content p {
+  @apply mb-4 text-gray-600;
+}
+
+.documentation-content ul, .documentation-content ol {
+  @apply mb-4 ml-6;
+}
+
+.documentation-content li {
+  @apply mb-2;
+}
+
+.documentation-content table {
+  @apply w-full border-collapse mb-6 bg-white shadow-sm rounded-lg overflow-hidden;
+}
+
+.documentation-content th, .documentation-content td {
+  @apply border-b border-gray-200 px-4 py-3 text-left;
+}
+
+.documentation-content th {
+  @apply bg-gray-50 font-semibold text-gray-700 border-b-2 border-gray-200;
+}
+
+.documentation-content td {
+  @apply text-gray-600;
+}
+
+.documentation-content tr:hover {
+  @apply bg-gray-50;
+}
+
+/* Handle DITA table classes */
+.documentation-content .simpletable {
+  @apply w-full border-collapse mb-6 bg-white shadow-sm rounded-lg overflow-hidden;
+}
+
+.documentation-content .strow {
+  @apply border-b border-gray-200;
+}
+
+.documentation-content .stentry {
+  @apply px-4 py-3 text-left text-gray-600;
+}
+
+.documentation-content .strow:first-child .stentry {
+  @apply bg-gray-50 font-semibold text-gray-700 border-b-2 border-gray-200;
+}
+
+.documentation-content .strow:hover {
+  @apply bg-gray-50;
+}
+
+.documentation-content img {
+  @apply max-w-full h-auto mb-4 rounded-lg shadow-sm mx-auto block;
+}
+
+.documentation-content .imagecenter {
+  @apply text-center mb-4;
+}
+
+.documentation-content .imagecenter img {
+  @apply inline-block;
+}
+
+.documentation-content a {
+  @apply text-blue-600 hover:text-blue-800 underline;
+}
+
+.documentation-content code {
+  @apply bg-gray-100 px-2 py-1 rounded text-sm font-mono;
+}
+
+.documentation-content pre {
+  @apply bg-gray-100 p-4 rounded-lg overflow-x-auto mb-4;
+}
+
+.documentation-content blockquote {
+  @apply border-l-4 border-blue-500 pl-4 italic text-gray-600 mb-4;
+}
+
+/* Figure styling */
+.documentation-content .fig {
+  @apply mb-6 text-center;
+}
+
+.documentation-content .fig img {
+  @apply mx-auto;
+}
+
+/* Section styling */
+.documentation-content .section {
+  @apply mb-6;
+}
+
+.documentation-content .sectiontitle {
+  @apply text-lg font-medium text-gray-700 mb-3 mt-4;
+}
