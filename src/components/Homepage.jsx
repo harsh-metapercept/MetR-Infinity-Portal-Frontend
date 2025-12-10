@@ -74,10 +74,10 @@ const Homepage = () => {
           </div>
 
           {/* Header */}
-          <header className="relative z-10 flex items-center px-6 lg:px-20 py-4">
+          <header className="relative z-10 flex items-center justify-between px-4 sm:px-6 lg:px-20 py-4">
             {/* Logo */}
             <div className="flex items-center gap-4">
-              <img src={logoImg} alt="MetR Logo" className="w-12 h-12 lg:w-16 lg:h-16 object-contain" />
+              <img src={logoImg} alt="MetR Logo" className="w-10 h-10 sm:w-12 sm:h-12 lg:w-16 lg:h-16 object-contain" />
             </div>
 
             {/* Navigation Menu - Hidden on mobile */}
@@ -87,14 +87,17 @@ const Homepage = () => {
               <a href="#" className="font-semibold text-lg text-[#3d3e3f] hover:text-[#266EF6] transition-colors duration-200">Pricing</a>
               <a href="#" className="font-semibold text-lg text-[#3d3e3f] hover:text-[#266EF6] transition-colors duration-200">About</a>
             </nav>
+            
+            {/* Mobile Menu */}
+            <MobileMenu />
           </header>
 
           {/* Main Content */}
-          <div className="relative z-10 flex flex-col items-center justify-center text-center px-6 mt-16 lg:mt-32">
-            <h1 className="font-bold text-4xl lg:text-6xl xl:text-[64px] text-[#3d3e3f] mb-6 leading-tight max-w-4xl">
+          <div className="relative z-10 flex flex-col items-center justify-center text-center px-4 sm:px-6 mt-12 sm:mt-16 lg:mt-32">
+            <h1 className="font-bold text-3xl sm:text-4xl lg:text-6xl xl:text-[64px] text-[#3d3e3f] mb-4 sm:mb-6 leading-tight max-w-4xl">
               How can we help you
             </h1>
-            <p className="text-lg lg:text-2xl text-[#3d3e3f] mb-12 max-w-2xl">
+            <p className="text-base sm:text-lg lg:text-2xl text-[#3d3e3f] mb-8 sm:mb-12 max-w-2xl px-4">
               Search here to get answers to your questions
             </p>
 
@@ -266,13 +269,13 @@ const Homepage = () => {
 const TopicCard = ({ icon, title, bgColor, onClick }) => {
   return (
     <div 
-      className="bg-white bg-opacity-40 backdrop-blur-sm rounded-2xl relative hover:bg-opacity-60 transition-all duration-300 hover:shadow-lg w-full max-w-sm h-80 lg:h-[336px] p-6 cursor-pointer group"
+      className="bg-white bg-opacity-40 backdrop-blur-sm rounded-2xl relative hover:bg-opacity-60 transition-all duration-300 hover:shadow-lg w-full max-w-sm h-64 sm:h-80 lg:h-[336px] p-4 sm:p-6 cursor-pointer group mx-auto"
       onClick={onClick}
     >
-      <div className={`w-12 h-12 ${bgColor} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
-        <img src={icon} alt="" className="w-6 h-6" />
+      <div className={`w-10 h-10 sm:w-12 sm:h-12 ${bgColor} rounded-2xl flex items-center justify-center mb-4 sm:mb-6 group-hover:scale-110 transition-transform duration-300`}>
+        <img src={icon} alt="" className="w-5 h-5 sm:w-6 sm:h-6" />
       </div>
-      <h3 className="font-bold text-2xl lg:text-4xl xl:text-[48px] text-[#3d3e3f] group-hover:text-[#266EF6] transition-colors duration-300">
+      <h3 className="font-bold text-xl sm:text-2xl lg:text-4xl xl:text-[48px] text-[#3d3e3f] group-hover:text-[#266EF6] transition-colors duration-300 leading-tight">
         {title}
       </h3>
     </div>

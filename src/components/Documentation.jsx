@@ -12,6 +12,7 @@ const Documentation = () => {
   const [currentDoc, setCurrentDoc] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Fetch documentation filtered by branch name
   useEffect(() => {
@@ -76,12 +77,18 @@ const Documentation = () => {
   }
 
   return (
-    <div className="min-h-screen w-full bg-[#fbf8f8]">
+    <div className="min-h-screen w-full bg-[#fbf8f8] overflow-x-hidden">
       <div className="bg-[#fbf8f8] relative min-h-screen w-full max-w-[1440px] mx-auto">
-        <Header currentDoc={currentDoc} />
-        <div className="flex">
-          <Sidebar allDocs={allDocs} currentDoc={currentDoc} onDocSelect={handleDocSelect} />
-          <MainContent currentDoc={currentDoc} />
+        <Header currentDoc={currentDoc} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+        <div className="flex relative min-h-0">
+          <Sidebar 
+            allDocs={allDocs} 
+            currentDoc={currentDoc} 
+            onDocSelect={handleDocSelect}
+            sidebarOpen={sidebarOpen}
+            setSidebarOpen={setSidebarOpen}
+          />
+          <MainContent currentDoc={currentDoc} allDocs={allDocs} onDocSelect={handleDocSelect} />
         </div>
         <Footer />
       </div>

@@ -42,18 +42,18 @@ const StandardTable = ({ tableHtml }) => {
   }
   
   return (
-    <div className="my-6 overflow-x-auto">
-      <div className="inline-block min-w-full shadow-sm rounded-lg border border-gray-200">
-        <table className="min-w-full divide-y divide-gray-200">
+    <div className="my-6 w-full overflow-x-auto">
+      <div className="min-w-full shadow-sm rounded-lg border border-gray-200">
+        <table className="w-full divide-y divide-gray-200">
           {headers.length > 0 && (
             <thead className="bg-gray-50">
               <tr>
                 {headers.map((header, index) => (
                   <th
                     key={index}
-                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200 last:border-r-0"
+                    className="px-2 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200 last:border-r-0 min-w-0"
                   >
-                    {header}
+                    <div className="truncate">{header}</div>
                   </th>
                 ))}
               </tr>
@@ -65,9 +65,10 @@ const StandardTable = ({ tableHtml }) => {
                 {row.map((cell, cellIndex) => (
                   <td
                     key={cellIndex}
-                    className="px-4 py-3 text-sm text-gray-900 border-r border-gray-100 last:border-r-0"
-                    dangerouslySetInnerHTML={{ __html: cell }}
-                  />
+                    className="px-2 sm:px-4 py-3 text-sm text-gray-900 border-r border-gray-100 last:border-r-0 min-w-0"
+                  >
+                    <div dangerouslySetInnerHTML={{ __html: cell }} className="break-words" />
+                  </td>
                 ))}
               </tr>
             ))}
