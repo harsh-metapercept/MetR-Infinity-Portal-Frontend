@@ -15,11 +15,13 @@ import icon2 from '../assets/svg/icon2.svg';
 import icon3 from '../assets/svg/icon3.svg';
 import icon4 from '../assets/svg/icon4.svg';
 import MobileMenu from './MobileMenu';
+import ChatModal from './ChatModal';
 
 const Homepage = () => {
   const navigate = useNavigate();
   const [repositories, setRepositories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   // Icon colors for cards
   const cardColors = ['bg-[#00d5be]', 'bg-[#ff8904]', 'bg-[#51a2ff]', 'bg-[#c27aff]'];
@@ -103,7 +105,10 @@ const Homepage = () => {
 
             {/* Search Bar */}
             <div className="w-full max-w-md lg:max-w-lg mb-6">
-              <div className="bg-[#3d3e3f] bg-opacity-50 backdrop-blur-sm rounded-[20px] h-9 lg:h-10 flex items-center px-3">
+              <div 
+                onClick={() => setIsChatOpen(true)}
+                className="bg-[#3d3e3f] bg-opacity-50 backdrop-blur-sm rounded-[20px] h-9 lg:h-10 flex items-center px-3 cursor-pointer hover:bg-opacity-60 transition-all"
+              >
                 <div className="flex items-center gap-2 text-white text-sm lg:text-base">
                   <span className="text-lg">🔍</span>
                   <span>Search the Doc</span>
@@ -261,6 +266,7 @@ const Homepage = () => {
           </div>
         </footer>
       </div>
+      <ChatModal isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} domain="general" />
     </div>
   );
 };

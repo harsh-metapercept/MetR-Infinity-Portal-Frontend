@@ -3,12 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import logoImg from '../../assets/images/Logo.png';
 import { documentationAPI } from '../../utils/documentationAPI';
 import { formatBranchName } from '../../utils/formatBranchName';
+import ChatModal from '../ChatModal';
 
 const Header = ({ currentDoc, sidebarOpen, setSidebarOpen }) => {
   const navigate = useNavigate();
   const [modules, setModules] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const currentBranch = currentDoc?.attributes?.branch;
+  const domain = currentDoc?.attributes?.domain || 'general';
 
   useEffect(() => {
     const fetchModules = async () => {
@@ -84,9 +87,11 @@ const Header = ({ currentDoc, sidebarOpen, setSidebarOpen }) => {
           <input 
             type="text" 
             placeholder="Search"
-            className="w-32 sm:w-48 lg:w-96 h-[42px] pl-10 pr-4 border border-gray-200 rounded-lg text-sm"
+            onClick={() => setIsChatOpen(true)}
+            readOnly
+            className="w-32 sm:w-48 lg:w-96 h-[42px] pl-10 pr-4 border border-gray-200 rounded-lg text-sm cursor-pointer hover:border-[#266EF6] transition-colors"
           />
-          <div className="absolute left-3 top-3 w-4 h-4">
+          <div className="absolute left-3 top-3 w-4 h-4 pointer-events-none">
             <svg fill="none" viewBox="0 0 16 16" className="w-full h-full">
               <path d="M14 14L11.1067 11.1067" stroke="#99A1AF" strokeWidth="1.33" strokeLinecap="round" strokeLinejoin="round"/>
               <circle cx="7.33333" cy="7.33333" r="5.33333" stroke="#99A1AF" strokeWidth="1.33" strokeLinecap="round" strokeLinejoin="round"/>
@@ -102,6 +107,7 @@ const Header = ({ currentDoc, sidebarOpen, setSidebarOpen }) => {
           </svg>
         </button>
       </div>
+      <ChatModal isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} domain={domain} />
     </header>
   );
 };
