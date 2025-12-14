@@ -11,6 +11,47 @@
   box-sizing: border-box;
 }
 
+/* Custom Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: linear-gradient(to bottom, #f5f5f5, #e8e8e8);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #266EF6, #BF00FF);
+  border-radius: 10px;
+  border: 2px solid #f5f5f5;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #1e5ad4, #9900cc);
+}
+
+/* Modal Scrollbar */
+.modal-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-scrollbar::-webkit-scrollbar-track {
+  background: #f8f9fa;
+  border-radius: 10px;
+}
+
+.modal-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #266EF6, #BF00FF);
+  border-radius: 10px;
+  border: 2px solid #f8f9fa;
+}
+
+.modal-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #1e5ad4, #9900cc);
+}
+
 body {
   font-family: 'Source Sans Pro', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.6;
@@ -19,7 +60,12 @@ body {
   background-color: #fbf8f8;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: 'Poppins', sans-serif;
 }
 
@@ -115,12 +161,9 @@ h1, h2, h3, h4, h5, h6 {
   align-content: stretch;
 }
 
-.size-full {
-  width: 100%;
-  height: 100%;
-}
 
-.object-50%-50% {
+
+.object-center {
   object-position: 50% 50%;
 }
 
@@ -132,3 +175,29 @@ h1, h2, h3, h4, h5, h6 {
   backdrop-filter: blur(8px);
 }
 
+/* Loader Animation */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

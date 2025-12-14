@@ -1,89 +1,61 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import Header from './documentation/Header';
 import Sidebar from './documentation/Sidebar';
 import MainContent from './documentation/MainContent';
 import Footer from './documentation/Footer';
-import { documentationAPI } from '../utils/documentationAPI';
+import { PageLoader, ErrorDisplay } from './Loader';
+import { useDocsByRepository, useAllDocs, useDocById } from '../hooks/useDocumentation';
 
 const Documentation = () => {
   const { branchName } = useParams();
-  const [allDocs, setAllDocs] = useState([]);
-  const [currentDoc, setCurrentDoc] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [selectedDocId, setSelectedDocId] = useState(null);
 
-  // Fetch documentation filtered by branch name
-  useEffect(() => {
-    const fetchDocs = async () => {
-      try {
-        setLoading(true);
-        let response;
-        
-        if (branchName) {
-          // Fetch docs for specific branch
-          console.log('Fetching docs for branch:', branchName);
-          response = await documentationAPI.getDocsByRepository(branchName);
-        } else {
-          // Fetch all docs if no branch specified
-          response = await documentationAPI.getAllDocs();
-        }
-        
-        setAllDocs(response.data || []);
-        
-        // Set first non-index document as default
-        if (response.data && response.data.length > 0) {
-          const firstDoc = response.data.find(doc => 
-            doc.attributes?.fileName?.toLowerCase() !== 'index.html'
-          ) || response.data[0];
-          setCurrentDoc(firstDoc);
-        }
-      } catch (err) {
-        setError(err.message);
-        console.error('Error fetching documentation:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const { data: docsData, isLoading: loading, error } = branchName
+    ? useDocsByRepository(branchName)
+    : useAllDocs();
 
-    fetchDocs();
-  }, [branchName]);
+  const allDocs = docsData?.data || [];
 
-  // Function to handle document selection
-  const handleDocSelect = async (docId) => {
-    try {
-      const response = await documentationAPI.getDocById(docId);
-      setCurrentDoc(response.data);
-    } catch (err) {
-      console.error('Error fetching document:', err);
-    }
+  const firstDocId = allDocs.length > 0
+    ? (allDocs.find(doc => doc.attributes?.fileName?.toLowerCase() !== 'index.html') || allDocs[0])?.id
+    : null;
+
+  const docIdToFetch = selectedDocId || firstDocId;
+  const { data: currentDocData } = useDocById(docIdToFetch);
+  const currentDoc = currentDocData?.data;
+
+  const handleDocSelect = (docId) => {
+    setSelectedDocId(docId);
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen w-full bg-[#fbf8f8] flex items-center justify-center">
-        <div className="text-lg">Loading documentation...</div>
-      </div>
-    );
+    return <PageLoader />;
   }
 
   if (error) {
     return (
       <div className="min-h-screen w-full bg-[#fbf8f8] flex items-center justify-center">
-        <div className="text-lg text-red-600">Error: {error}</div>
+        <ErrorDisplay message={error?.message || 'Failed to load documentation'} onRetry={() => window.location.reload()} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen w-full bg-[#fbf8f8] overflow-x-hidden">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      className="min-h-screen w-full bg-[#fbf8f8] overflow-x-hidden"
+    >
       <div className="bg-[#fbf8f8] relative min-h-screen w-full max-w-[1440px] mx-auto">
         <Header currentDoc={currentDoc} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
         <div className="flex relative min-h-0">
-          <Sidebar 
-            allDocs={allDocs} 
-            currentDoc={currentDoc} 
+          <Sidebar
+            allDocs={allDocs}
+            currentDoc={currentDoc}
             onDocSelect={handleDocSelect}
             sidebarOpen={sidebarOpen}
             setSidebarOpen={setSidebarOpen}
@@ -92,7 +64,7 @@ const Documentation = () => {
         </div>
         <Footer />
       </div>
-    </div>
+    </motion.div>
   );
 };
 

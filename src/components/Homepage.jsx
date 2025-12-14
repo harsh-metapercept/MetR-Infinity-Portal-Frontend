@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { documentationAPI } from '../utils/documentationAPI';
+import { motion } from 'framer-motion';
 import { formatBranchName } from '../utils/formatBranchName';
+import { ErrorDisplay } from './Loader';
+import { useApp } from '../context/AppContext';
 import logoImg from '../assets/images/Logo.png';
 import vectorSvg from '../assets/svg/Vector.svg';
 import vector1Svg from '../assets/svg/Vector-1.svg';
@@ -15,35 +16,16 @@ import icon2 from '../assets/svg/icon2.svg';
 import icon3 from '../assets/svg/icon3.svg';
 import icon4 from '../assets/svg/icon4.svg';
 import MobileMenu from './MobileMenu';
-import ChatModal from './ChatModal';
 
 const Homepage = () => {
   const navigate = useNavigate();
-  const [repositories, setRepositories] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [isChatOpen, setIsChatOpen] = useState(false);
+  const { openChat, repositories, repositoriesLoading: loading, repositoriesError: error } = useApp();
 
   // Icon colors for cards
   const cardColors = ['bg-[#00d5be]', 'bg-[#ff8904]', 'bg-[#51a2ff]', 'bg-[#c27aff]'];
   const icons = [icon1, icon2, icon3, icon4];
 
-  // Fetch repositories on mount
-  useEffect(() => {
-    const fetchRepositories = async () => {
-      try {
-        setLoading(true);
-        const response = await documentationAPI.getAllRepositories();
-        console.log('Repositories fetched:', response.data);
-        setRepositories(response.data || []);
-      } catch (error) {
-        console.error('Error fetching repositories:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
 
-    fetchRepositories();
-  }, []);
 
   // Handle card click - navigate to documentation with branch name
   const handleCardClick = (branchName) => {
@@ -78,9 +60,9 @@ const Homepage = () => {
           {/* Header */}
           <header className="relative z-10 flex items-center justify-between px-4 sm:px-6 lg:px-20 py-4">
             {/* Logo */}
-            <div className="flex items-center gap-4">
+            <a href="/" className="flex items-center gap-4 hover:opacity-80 transition-opacity">
               <img src={logoImg} alt="MetR Logo" className="w-10 h-10 sm:w-12 sm:h-12 lg:w-16 lg:h-16 object-contain" />
-            </div>
+            </a>
 
             {/* Navigation Menu - Hidden on mobile */}
             <nav className="hidden lg:flex gap-12 items-center absolute left-1/2 transform -translate-x-1/2">
@@ -106,7 +88,7 @@ const Homepage = () => {
             {/* Search Bar */}
             <div className="w-full max-w-md lg:max-w-lg mb-6">
               <div 
-                onClick={() => setIsChatOpen(true)}
+                onClick={() => openChat('general')}
                 className="bg-[#3d3e3f] bg-opacity-50 backdrop-blur-sm rounded-[20px] h-9 lg:h-10 flex items-center px-3 cursor-pointer hover:bg-opacity-60 transition-all"
               >
                 <div className="flex items-center gap-2 text-white text-sm lg:text-base">
@@ -161,8 +143,23 @@ const Homepage = () => {
               
               {loading ? (
                 <div className="text-center py-12">
-                  <p className="text-lg text-gray-500">Loading modules...</p>
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex flex-col items-center gap-4"
+                  >
+                    <div className="relative w-12 h-12">
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        className="w-12 h-12 border-4 border-gray-200 border-t-accent-blue rounded-full"
+                      />
+                    </div>
+                    <p className="text-lg text-gray-500">Loading modules...</p>
+                  </motion.div>
                 </div>
+              ) : error ? (
+                <ErrorDisplay message={error} onRetry={() => window.location.reload()} />
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12 relative z-10">
                   {repositories.map((repo, index) => {
@@ -235,9 +232,9 @@ const Homepage = () => {
             <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-start">
               {/* Company Info */}
               <div className="w-full lg:w-[384px] flex flex-col gap-8">
-                <div className="w-24 lg:w-[120px] h-8">
+                <a href="/" className="w-24 lg:w-[120px] h-8 hover:opacity-80 transition-opacity">
                   <img src={logoImg} alt="MetR Logo" className="w-full h-full object-contain" />
-                </div>
+                </a>
                 <p className="text-sm text-[#3d3e3f]">
                   © 2024 MetR Infinity. All rights reserved
                 </p>
@@ -266,7 +263,6 @@ const Homepage = () => {
           </div>
         </footer>
       </div>
-      <ChatModal isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} domain="general" />
     </div>
   );
 };
@@ -274,7 +270,12 @@ const Homepage = () => {
 // Topic Card Component
 const TopicCard = ({ icon, title, bgColor, onClick }) => {
   return (
-    <div 
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      whileHover={{ scale: 1.05, y: -5 }}
+      whileTap={{ scale: 0.98 }}
       className="bg-white bg-opacity-40 backdrop-blur-sm rounded-2xl relative hover:bg-opacity-60 transition-all duration-300 hover:shadow-lg w-full max-w-sm h-64 sm:h-80 lg:h-[336px] p-4 sm:p-6 cursor-pointer group mx-auto"
       onClick={onClick}
     >
@@ -284,7 +285,7 @@ const TopicCard = ({ icon, title, bgColor, onClick }) => {
       <h3 className="font-bold text-xl sm:text-2xl lg:text-4xl xl:text-[48px] text-[#3d3e3f] group-hover:text-[#266EF6] transition-colors duration-300 leading-tight">
         {title}
       </h3>
-    </div>
+    </motion.div>
   );
 };
 
