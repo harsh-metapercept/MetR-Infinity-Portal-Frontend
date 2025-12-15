@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { marked } from 'marked';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useApp } from '../context/AppContext';
+import { useLinkHandler } from '../hooks/useLinkHandler';
 
 // Configure marked for better rendering
 marked.setOptions({
@@ -18,16 +19,34 @@ const ChatModal = ({ isOpen, onClose, domain = 'general' }) => {
   const [loading, setLoading] = useState(false);
   const [expandedDocs, setExpandedDocs] = useState({});
   const { userLocation } = useApp();
+  const lastScrolledMessageCount = useRef(0);
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
   const textareaRef = useRef(null);
   const API_BASE = import.meta.env.VITE_AI_URL || 'http://localhost:8000';
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  useLinkHandler(messagesContainerRef.current);
 
   useEffect(() => {
-    scrollToBottom();
+    if (isOpen && !loading) {
+      textareaRef.current?.focus();
+    }
+  }, [isOpen, loading]);
+
+  useEffect(() => {
+    if (messages.length > 0 && lastScrolledMessageCount.current === 0) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      lastScrolledMessageCount.current = messages.length;
+      return;
+    }
+
+    if (messages.length > lastScrolledMessageCount.current) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage?.role === 'user') {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        lastScrolledMessageCount.current = messages.length;
+      }
+    }
   }, [messages]);
 
 
@@ -50,6 +69,13 @@ const ChatModal = ({ isOpen, onClose, domain = 'general' }) => {
   const loadConversation = async (id) => {
     try {
       const response = await fetch(`${API_BASE}/api/v1/conversations/${id}`);
+      if (response.status === 404) {
+        console.log('Conversation not found, clearing local storage');
+        localStorage.removeItem(`${PREFIX}_conversation_id`);
+        setConversationId(null);
+        setMessages([]);
+        return;
+      }
       const data = await response.json();
       if (data.id) {
         setConversationId(data.id);
@@ -82,6 +108,51 @@ const ChatModal = ({ isOpen, onClose, domain = 'general' }) => {
     } catch (error) {
       console.error('Error submitting feedback:', error);
     }
+  };
+
+  const processSearchResponse = async (response) => {
+    const messageId = response.headers.get('X-Message-ID');
+    const reader = response.body?.getReader();
+    if (!reader) throw new Error('No reader available');
+
+    let fullText = '';
+    const botMessage = { 
+      role: 'assistant', 
+      content: '', 
+      created_at: new Date(),
+      message_id: messageId ? parseInt(messageId) : null,
+      supportingDocs: []
+    };
+    setMessages(prev => [...prev, botMessage]);
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      fullText += new TextDecoder().decode(value);
+    }
+
+    const docsStartIdx = fullText.indexOf('---SUPPORTING_DOCS_START---');
+    const docsEndIdx = fullText.indexOf('---SUPPORTING_DOCS_END---');
+    
+    let markdown = fullText;
+    let supportingDocs = [];
+    
+    if (docsStartIdx !== -1 && docsEndIdx !== -1) {
+      markdown = fullText.substring(0, docsStartIdx);
+      const docsJson = fullText.substring(docsStartIdx + 27, docsEndIdx).trim();
+      
+      try {
+        supportingDocs = JSON.parse(docsJson);
+        console.log('Parsed supporting docs:', supportingDocs.length);
+      } catch (e) {
+        console.error('Parse error:', e);
+      }
+    }
+    
+    const htmlContent = marked.parse(markdown);
+    setMessages(prev => prev.map((msg, idx) => 
+      idx === prev.length - 1 ? { ...msg, content: htmlContent, supportingDocs } : msg
+    ));
   };
 
   const sendMessage = async () => {
@@ -126,79 +197,36 @@ const ChatModal = ({ isOpen, onClose, domain = 'general' }) => {
         })
       });
 
-      const messageId = response.headers.get('X-Message-ID');
-      const reader = response.body?.getReader();
-      if (!reader) throw new Error('No reader available');
-
-      let fullMarkdown = '';
-      let supportingDocs = [];
-      let inSupportingDocs = false;
-      let supportingDocsBuffer = '';
-
-      const botMessage = { 
-        role: 'assistant', 
-        content: '', 
-        created_at: new Date(),
-        message_id: messageId ? parseInt(messageId) : null,
-        supportingDocs: []
-      };
-      setMessages(prev => [...prev, botMessage]);
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = new TextDecoder().decode(value);
+      if (response.status === 404) {
+        console.log('Conversation not found during search, creating new one');
+        localStorage.removeItem(`${PREFIX}_conversation_id`);
+        const newConvResponse = await fetch(`${API_BASE}/api/v1/conversations`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ domain })
+        });
+        const newConvData = await newConvResponse.json();
+        currentConvId = newConvData.id;
+        setConversationId(currentConvId);
+        localStorage.setItem(`${PREFIX}_conversation_id`, currentConvId);
         
-        if (chunk.includes('---SUPPORTING_DOCS_START---')) {
-          inSupportingDocs = true;
-          const parts = chunk.split('---SUPPORTING_DOCS_START---');
-          if (parts[0].trim()) {
-            fullMarkdown += parts[0];
-            const htmlContent = marked.parse(fullMarkdown);
-            setMessages(prev => prev.map((msg, idx) => 
-              idx === prev.length - 1 ? { ...msg, content: htmlContent } : msg
-            ));
-          }
-          if (parts[1]) supportingDocsBuffer += parts[1];
-          continue;
-        }
-        
-        if (chunk.includes('---SUPPORTING_DOCS_END---')) {
-          const parts = chunk.split('---SUPPORTING_DOCS_END---');
-          if (parts[0]) supportingDocsBuffer += parts[0];
-          
-          if (supportingDocsBuffer.trim()) {
-            try {
-              supportingDocs = JSON.parse(supportingDocsBuffer);
-              console.log('Parsed supporting docs:', supportingDocs.length, 'documents');
-            } catch (e) {
-              console.error('Failed to parse supporting docs:', e);
-              console.error('Buffer content:', supportingDocsBuffer);
-              supportingDocs = [];
-            }
-          }
-          inSupportingDocs = false;
-          continue;
-        }
-
-        if (inSupportingDocs) {
-          supportingDocsBuffer += chunk;
-        } else if (chunk.trim()) {
-          fullMarkdown += chunk;
-          const htmlContent = marked.parse(fullMarkdown);
-          setMessages(prev => prev.map((msg, idx) => 
-            idx === prev.length - 1 ? { ...msg, content: htmlContent } : msg
-          ));
-        }
+        const retryResponse = await fetch(`${API_BASE}/api/v1/search`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query: messageText,
+            domain,
+            conversation_id: currentConvId,
+            ...(userLocation.latitude && { latitude: userLocation.latitude }),
+            ...(userLocation.longitude && { longitude: userLocation.longitude }),
+            ...(userLocation.country && { country: userLocation.country })
+          })
+        });
+        await processSearchResponse(retryResponse);
+        return;
       }
 
-      console.log('Final supporting docs count:', supportingDocs.length);
-      if (supportingDocs.length > 0) {
-        setMessages(prev => prev.map((msg, idx) => 
-          idx === prev.length - 1 ? { ...msg, supportingDocs } : msg
-        ));
-      }
+      await processSearchResponse(response);
     } catch (error) {
       console.error('Error sending message:', error);
       setMessages(prev => [...prev, { 
@@ -256,6 +284,8 @@ const ChatModal = ({ isOpen, onClose, domain = 'general' }) => {
                 localStorage.removeItem(`${PREFIX}_conversation_id`);
                 setConversationId(null);
                 setMessages([]);
+                setExpandedDocs({});
+                lastScrolledMessageCount.current = 0;
               }}
               className="text-accent-blue hover:text-accent-purple transition-colors flex items-center gap-1 text-xs sm:text-sm font-medium px-2 py-1 rounded-lg hover:bg-accent-blue/10"
             >
@@ -276,7 +306,7 @@ const ChatModal = ({ isOpen, onClose, domain = 'general' }) => {
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 bg-gradient-to-b from-white to-gray-50 modal-scrollbar">
+        <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 bg-gradient-to-b from-white to-gray-50 modal-scrollbar">
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center px-4">
               <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-accent-blue to-accent-purple rounded-full flex items-center justify-center mb-3 sm:mb-4">
@@ -418,7 +448,7 @@ const ChatModal = ({ isOpen, onClose, domain = 'general' }) => {
 
         {/* Input */}
         <div className="p-3 sm:p-4 border-t border-gray-200 bg-white">
-          <div className="flex gap-2 items-end">
+          <div className="flex gap-2 items-center">
             <div className="flex-1 relative">
               <textarea
                 ref={textareaRef}
