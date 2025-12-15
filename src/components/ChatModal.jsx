@@ -3,11 +3,20 @@ import { marked } from 'marked';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useApp } from '../context/AppContext';
 
+// Configure marked for better rendering
+marked.setOptions({
+  breaks: true,
+  gfm: true,
+  headerIds: false,
+  mangle: false
+});
+
 const ChatModal = ({ isOpen, onClose, domain = 'general' }) => {
   const [conversationId, setConversationId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [expandedDocs, setExpandedDocs] = useState({});
   const { userLocation } = useApp();
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
@@ -46,9 +55,10 @@ const ChatModal = ({ isOpen, onClose, domain = 'general' }) => {
         setConversationId(data.id);
         setMessages((data.messages || []).map(msg => ({
           ...msg,
-          content: msg.role === 'assistant' ? marked(msg.content) : msg.content,
+          content: msg.role === 'assistant' ? marked.parse(msg.content) : msg.content,
           message_id: msg.id,
-          feedback: msg.feedback
+          feedback: msg.feedback,
+          supportingDocs: msg.supporting_docs || []
         })));
       }
     } catch (error) {
@@ -139,33 +149,51 @@ const ChatModal = ({ isOpen, onClose, domain = 'general' }) => {
         if (done) break;
 
         const chunk = new TextDecoder().decode(value);
+        
         if (chunk.includes('---SUPPORTING_DOCS_START---')) {
           inSupportingDocs = true;
+          const parts = chunk.split('---SUPPORTING_DOCS_START---');
+          if (parts[0].trim()) {
+            fullMarkdown += parts[0];
+            const htmlContent = marked.parse(fullMarkdown);
+            setMessages(prev => prev.map((msg, idx) => 
+              idx === prev.length - 1 ? { ...msg, content: htmlContent } : msg
+            ));
+          }
+          if (parts[1]) supportingDocsBuffer += parts[1];
           continue;
         }
+        
         if (chunk.includes('---SUPPORTING_DOCS_END---')) {
+          const parts = chunk.split('---SUPPORTING_DOCS_END---');
+          if (parts[0]) supportingDocsBuffer += parts[0];
+          
           if (supportingDocsBuffer.trim()) {
             try {
               supportingDocs = JSON.parse(supportingDocsBuffer);
+              console.log('Parsed supporting docs:', supportingDocs.length, 'documents');
             } catch (e) {
-              console.error('Failed to parse supporting docs:', e, 'Buffer:', supportingDocsBuffer.substring(0, 100));
+              console.error('Failed to parse supporting docs:', e);
+              console.error('Buffer content:', supportingDocsBuffer);
               supportingDocs = [];
             }
           }
-          break;
+          inSupportingDocs = false;
+          continue;
         }
 
         if (inSupportingDocs) {
           supportingDocsBuffer += chunk;
         } else if (chunk.trim()) {
           fullMarkdown += chunk;
-          const htmlContent = marked(fullMarkdown);
+          const htmlContent = marked.parse(fullMarkdown);
           setMessages(prev => prev.map((msg, idx) => 
             idx === prev.length - 1 ? { ...msg, content: htmlContent } : msg
           ));
         }
       }
 
+      console.log('Final supporting docs count:', supportingDocs.length);
       if (supportingDocs.length > 0) {
         setMessages(prev => prev.map((msg, idx) => 
           idx === prev.length - 1 ? { ...msg, supportingDocs } : msg
@@ -272,45 +300,74 @@ const ChatModal = ({ isOpen, onClose, domain = 'general' }) => {
                   ) : (
                     <>
                       <div className="bg-gradient-to-br from-gray-50 to-gray-100 text-text-primary rounded-2xl px-3 py-2 sm:px-4 sm:py-3 border border-gray-200 shadow-sm">
-                        <div className="text-xs sm:text-sm prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: msg.content }} />
+                        <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: msg.content }} />
                       </div>
                       {msg.supportingDocs && msg.supportingDocs.length > 0 && (
-                        <div className="bg-gradient-to-br from-accent-blue/5 to-accent-purple/5 rounded-xl px-3 py-2 sm:px-4 sm:py-3 border border-accent-blue/30 shadow-sm">
-                          <div className="flex items-center gap-2 mb-2 sm:mb-3">
-                            <svg className="w-3 h-3 sm:w-4 sm:h-4 text-accent-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        <div className="bg-gradient-to-br from-accent-blue/5 to-accent-purple/5 rounded-xl border border-accent-blue/30 shadow-sm mt-3 overflow-hidden">
+                          <button
+                            onClick={() => setExpandedDocs(prev => ({ ...prev, [idx]: !prev[idx] }))}
+                            className="w-full flex items-center justify-between p-3 hover:bg-accent-blue/5 transition-colors"
+                          >
+                            <div className="flex items-center gap-2">
+                              <svg className="w-4 h-4 text-accent-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                              <span className="text-sm font-bold text-accent-blue">Supporting Documents ({msg.supportingDocs.length})</span>
+                            </div>
+                            <svg 
+                              className={`w-5 h-5 text-accent-blue transition-transform ${expandedDocs[idx] ? 'rotate-180' : ''}`}
+                              fill="none" 
+                              viewBox="0 0 24 24" 
+                              stroke="currentColor"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                             </svg>
-                            <div className="text-xs font-bold text-accent-blue">Supporting Documents</div>
-                          </div>
-                          <div className="space-y-2 sm:space-y-3">
-                            {msg.supportingDocs.map((doc, docIdx) => (
-                              <div key={docIdx} className="bg-white rounded-lg p-2 sm:p-3 border border-accent-blue/20 hover:border-accent-blue/50 transition-colors">
-                                <div className="flex items-start justify-between gap-2 mb-1 sm:mb-2">
-                                  <div className="font-semibold text-xs sm:text-sm text-gray-800 flex-1">
-                                    {doc.metadata?.title || 'Untitled Document'}
-                                  </div>
-                                  {doc.score && (
-                                    <div className="flex items-center gap-1 bg-accent-blue/10 px-2 py-1 rounded-full flex-shrink-0">
-                                      <svg className="w-3 h-3 text-accent-blue" fill="currentColor" viewBox="0 0 20 20">
-                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                      </svg>
-                                      <span className="text-xs font-medium text-accent-blue">{doc.score.toFixed(2)}</span>
+                          </button>
+                          {expandedDocs[idx] && (
+                            <div className="px-3 pb-3 space-y-2">
+                              {msg.supportingDocs.map((doc, docIdx) => {
+                                const displayContent = doc.content_type === 'abstract' && doc.metadata?.abstract 
+                                  ? doc.metadata.abstract 
+                                  : doc.content;
+                                const relevanceScore = doc.score !== undefined ? (doc.score * 100).toFixed(0) : null;
+                                
+                                return (
+                                  <div key={docIdx} className="bg-white rounded-lg p-3 border border-accent-blue/20 hover:border-accent-blue/40 transition-all">
+                                    <div className="flex items-start justify-between gap-2 mb-2">
+                                      <div className="font-semibold text-sm text-gray-800 flex-1">
+                                        {doc.metadata?.title || 'Untitled Document'}
+                                      </div>
+                                      {relevanceScore && (
+                                        <span className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-full font-medium flex-shrink-0">
+                                          {relevanceScore}% match
+                                        </span>
+                                      )}
                                     </div>
-                                  )}
-                                </div>
-                                <div className="text-xs text-gray-600 leading-relaxed line-clamp-3">
-                                  {doc.content?.substring(0, 200)}{doc.content?.length > 200 ? '...' : ''}
-                                </div>
-                                {doc.metadata?.domain && (
-                                  <div className="mt-2 inline-block">
-                                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
-                                      {doc.metadata.domain}
-                                    </span>
+                                    <p className="text-xs text-gray-600 leading-relaxed mb-2">
+                                      {displayContent?.substring(0, 200)}{displayContent?.length > 200 ? '...' : ''}
+                                    </p>
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex flex-wrap gap-2">
+                                        {doc.metadata?.domain && (
+                                          <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-full font-medium">
+                                            {doc.metadata.domain}
+                                          </span>
+                                        )}
+                                      </div>
+                                      {doc.metadata?.s3_key && (
+                                        <button className="text-xs text-accent-blue hover:text-accent-purple font-medium flex items-center gap-1">
+                                          <span>View</span>
+                                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                          </svg>
+                                        </button>
+                                      )}
+                                    </div>
                                   </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
                       )}
                       {msg.message_id && (
